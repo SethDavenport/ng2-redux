@@ -42,6 +42,7 @@ export class NgRedux<RootState> {
      * @returns {BehaviorSubject<RootState>}
      */
     observableFromStore = (store: Store<RootState>) => {
+        console.log("STORE", store)
         return new BehaviorSubject(store.getState());
     };
 
