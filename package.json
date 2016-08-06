@@ -4,9 +4,8 @@
   "description": "Angular 2 bindings for Redux",
   "main": "./lib/index.js",
   "scripts": {
-    "build": "npm run typings && rimraf ./lib; tsc; rimraf ./lib/___tests___",
-    "test": "npm run typings  && npm run lint && npm run mocha",
-    "typings": "rimraf ./typings && typings install",
+    "build": "rimraf ./lib; tsc; rimraf ./lib/___tests___",
+    "test": "npm run lint && npm run mocha",
     "mocha": "ts-node ./node_modules/mocha/bin/_mocha  --opts ./src/___tests___/mocha.opts",
     "lint": "tslint 'src/**/*.ts' 'examples/counter/**.ts --exclude 'examples/counter/node_modules"
   },
@@ -48,6 +47,12 @@
   "homepage": "https://github.com/angular-redux/ng2-redux#readme",
   "devDependencies": {
     "@angular/core": "^2.0.0-rc.4",
+    "@types/chai": "^3.4.30",
+    "@types/es6-shim": "0.0.29",
+    "@types/mocha": "^2.2.29",
+    "@types/node": "^6.0.31",
+    "@types/sinon": "^1.16.27",
+    "@types/sinon-chai": "^2.7.26",
     "chai": "^3.5.0",
     "es6-shim": "^0.35.0",
     "expect": "^1.8.0",
@@ -62,16 +67,14 @@
     "symbol-observable": "^1.0.1",
     "ts-loader": "^0.8.1",
     "ts-node": "^0.5.5",
-    "tslint": "^3.11.0",
-    "typescript": "^1.8.10",
-    "typings": "^1.0.4",
+    "tslint": "^3.13.0",
+    "typescript": "^2.0.0",
     "zone.js": "0.6.12"
   },
   "peerDependencies": {
     "@angular/core": "2.0.0-rc.3 || ^2.0.0-rc.4",
     "redux": "^3.4.0",
     "rxjs": "5.0.0-beta.6",
-    "typings": "^1.0.4",
     "zone.js": "0.6.12"
   }
 }

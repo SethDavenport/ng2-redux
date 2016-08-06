@@ -130,11 +130,11 @@ export class NgRedux<RootState> {
             typeof selector === 'number' ||
             typeof selector === 'symbol') {
             return this._store$
-                .map(state => state[selector])
+                .map(state => state[ selector as string | number | symbol ])
                 .distinctUntilChanged(comparer);
         } else if (Array.isArray(selector)) {
             return this._store$
-                .map(state => getIn(state, selector))
+                .map(state => getIn(state, selector as (string | number)[]))
                 .distinctUntilChanged(comparer);
         } else if (typeof selector === 'function') {
             return this._store$
