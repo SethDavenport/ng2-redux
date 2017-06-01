@@ -6,19 +6,27 @@ import 'rxjs/add/operator/toArray';
 import 'rxjs/add/operator/take';
 
 import { NgRedux } from '../components/ng-redux';
+import { Action } from 'redux';
 import { select, select$ } from './select';
 import { selectionMap } from '../utils/selection-map';
 
-class MockNgZone { run = fn => fn() }
+class MockNgZone { run = (fn: Function) => fn() }
+
+interface IAppState {
+  foo: string;
+  baz: number;
+}
+
+type PayloadAction = Action & { payload: (string | number ) };
 
 describe('Select decorators', () => {
-  let ngRedux;
+  let ngRedux: NgRedux<IAppState>;
   let targetObj;
 
   const mockNgZone = new MockNgZone() as NgZone;
-  const defaultState = { foo: 'bar', baz: -1 };
+  const defaultState: IAppState = { foo: 'bar', baz: -1 };
 
-  const rootReducer = (state = defaultState, action) =>
+  const rootReducer = (state = defaultState, action: PayloadAction) =>
     action.payload ?
       Object.assign({}, state, { baz: action.payload }) :
       state;
@@ -26,7 +34,7 @@ describe('Select decorators', () => {
   beforeEach(() => {
     targetObj = {};
     selectionMap.reset();
-    ngRedux = new NgRedux(mockNgZone);
+    ngRedux = new NgRedux<IAppState>(mockNgZone);
     ngRedux.configureStore(rootReducer, defaultState);
   });
 
@@ -40,7 +48,7 @@ describe('Select decorators', () => {
           .take(2)
           .toArray()
           .subscribe(values => expect(values).toEqual([-1, 1]),
-            null,
+            undefined,
             done);
         ngRedux.dispatch({type: 'nvm', payload: 1});
       });
@@ -53,7 +61,7 @@ describe('Select decorators', () => {
           .take(2)
           .toArray()
           .subscribe(values => expect(values).toEqual([-1, 4]),
-            null,
+            undefined,
             done);
         ngRedux.dispatch({type: 'nvm', payload: 4});
       });
@@ -68,7 +76,7 @@ describe('Select decorators', () => {
           .take(2)
           .toArray()
           .subscribe(values => expect(values).toEqual([-1, 3]),
-            null,
+            undefined,
             done);
         ngRedux.dispatch({type: 'nvm', payload: 3});
       });
@@ -76,7 +84,7 @@ describe('Select decorators', () => {
 
     describe('when passed a function', () => {
       it('attempts to use that function as the selector function', done => {
-        const selector = state => state.baz * 2;
+        const selector = (state: IAppState) => state.baz * 2;
         class MockClass { @select(selector) obs$: Observable<number>; }
         const mockInstance = new MockClass();
 
@@ -84,7 +92,7 @@ describe('Select decorators', () => {
           .take(2)
           .toArray()
           .subscribe(values => expect(values).toEqual([-2, 10]),
-            null,
+            undefined,
             done);
         ngRedux.dispatch({type: 'nvm', payload: 5});
       });
@@ -101,7 +109,7 @@ describe('Select decorators', () => {
           .toArray()
           .subscribe(
             values => expect(values).toEqual([-1, 2]),
-            null,
+            undefined,
             done);
         ngRedux.dispatch({type: 'nvm', payload: 1});
         ngRedux.dispatch({type: 'nvm', payload: 2});
@@ -115,7 +123,7 @@ describe('Select decorators', () => {
         mockInstance
           .baz$
           .take(3)
-          .subscribe(null, null, done);
+          .subscribe(undefined, undefined, done);
 
         ngRedux.dispatch({type: 'nvm', payload: 1});
         ngRedux.dispatch({type: 'nvm', payload: 2});
@@ -127,7 +135,8 @@ describe('Select decorators', () => {
   });
 
   describe('@select$', () => {
-    const transformer = baz$ => baz$.map(baz => 2 * baz);
+    const transformer = (baz$: Observable<number>) =>
+      baz$.map(baz => 2 * baz);
 
     it('applies a transformer to the observable', done => {
       class MockClass { @select$('baz', transformer) baz$: Observable<number>; }
@@ -138,7 +147,7 @@ describe('Select decorators', () => {
         .toArray()
         .subscribe(
           values => expect(values).toEqual([-2, 10]),
-          null,
+          undefined,
           done);
       ngRedux.dispatch({type: 'nvm', payload: 5});
     });
@@ -154,7 +163,7 @@ describe('Select decorators', () => {
           .toArray()
           .subscribe(
             values => expect(values).toEqual([-2, 2]),
-            null,
+            undefined,
             done);
         ngRedux.dispatch({type: 'nvm', payload: 1});
         ngRedux.dispatch({type: 'nvm', payload: 2});
@@ -167,7 +176,7 @@ describe('Select decorators', () => {
         const mockInstance = new SpyClass();
         mockInstance.baz$
           .take(3)
-          .subscribe(null, null, done);
+          .subscribe(undefined, undefined, done);
 
         ngRedux.dispatch({type: 'nvm', payload: 1});
         ngRedux.dispatch({type: 'nvm', payload: 2});

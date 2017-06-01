@@ -9,7 +9,6 @@
     "experimentalDecorators": true,
     "removeComments": false,
     "outDir": "lib/src/",
-    "noImplicitAny": false,
     "declaration": true,
     "lib": [
       "es2015",
@@ -20,7 +19,8 @@
       "@angular-redux/store": [
         "./src"
       ]
-    }
+    },
+    "strict": true
   },
   "compileOnSave": false,
   "buildOnSave": false,

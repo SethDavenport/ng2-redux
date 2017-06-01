@@ -1,10 +1,12 @@
+import { Path, Pathable } from './path-types';
+
 /**
  * Gets a deeply-nested property value from an object, given a 'path'
  * of property names or array indices.
  *
  * @hidden
  */
-export function getIn(v, pathElems: (string | number)[]): any {
+export function getIn(v: Pathable, pathElems: Path): any {
   if (!v) {
     return v;
   }

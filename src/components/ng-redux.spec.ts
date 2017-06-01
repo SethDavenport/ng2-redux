@@ -1,16 +1,18 @@
 import { NgZone } from '@angular/core';
-import { createStore } from 'redux';
+import { createStore, Reducer, Store, Action } from 'redux';
 
+import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/combineLatest';
 
 import { NgRedux } from './ng-redux';
 import { select } from '../decorators/select';
 
+type PayloadAction = Action & { payload: any };
 const returnPojo = () => ({});
 
 class MockNgZone {
-  run = fn => fn()
+  run = (fn: Function) => fn()
 }
 
 describe('NgRedux Observable Store', () => {
@@ -20,10 +22,10 @@ describe('NgRedux Observable Store', () => {
     baz: number;
   };
 
-  let defaultState;
-  let rootReducer;
-  let store;
-  let ngRedux;
+  let defaultState: IAppState;
+  let rootReducer: Reducer<IAppState>;
+  let store: Store<IAppState>;
+  let ngRedux: NgRedux<IAppState>;
   const mockNgZone = new MockNgZone() as NgZone;
 
   beforeEach(() => {
@@ -33,7 +35,7 @@ describe('NgRedux Observable Store', () => {
       baz: -1,
     };
 
-    rootReducer = (state = defaultState, action) => {
+    rootReducer = (state = defaultState, action: PayloadAction) => {
       switch (action.type) {
         case 'UPDATE_FOO':
           return Object.assign({}, state, { foo: action.payload });
@@ -60,7 +62,7 @@ describe('NgRedux Observable Store', () => {
 
   it('should get the initial state', done => ngRedux
     .select()
-    .subscribe(state => {
+    .subscribe((state: IAppState) => {
       expect(state.foo).toEqual('bar');
       expect(state.baz).toEqual(-1);
       done();
@@ -74,11 +76,11 @@ describe('NgRedux Observable Store', () => {
     }));
 
   it('should not trigger a selector if that slice of state was not changed', () => {
-    let fooData;
+    let fooData = '';
 
     const spy = jasmine
       .createSpy('spy')
-      .and.callFake(foo => { fooData = foo; });
+      .and.callFake((foo: string) => { fooData = foo; });
 
     const foo$ = ngRedux
       .select('foo')
@@ -96,10 +98,10 @@ describe('NgRedux Observable Store', () => {
   });
 
   it('should not trigger a selector if the action payload is the same', () => {
-    let fooData;
+    let fooData = '';
     const spy = jasmine
       .createSpy('spy')
-      .and.callFake(foo => { fooData = foo; });
+      .and.callFake((foo: string) => { fooData = foo; });
     const foo$ = ngRedux
       .select('foo')
       .subscribe(spy);
@@ -117,7 +119,7 @@ describe('NgRedux Observable Store', () => {
     let fooData;
     const spy = jasmine
       .createSpy('spy')
-      .and.callFake(foo => { fooData = foo; });
+      .and.callFake((foo: string) => { fooData = foo; });
     const foo$ = ngRedux
       .select(state => `${state.foo}-${state.baz}`)
       .subscribe(spy);
@@ -142,11 +144,12 @@ describe('NgRedux Observable Store', () => {
   });
 
   it(`should accept a custom compare function`, () => {
-    let fooData;
+    type FooType = { data: string };
+    let fooData = { data: '' };
     const spy = jasmine
       .createSpy('spy')
-      .and.callFake(foo => { fooData = foo; });
-    const cmp = (a, b) => a.data === b.data;
+      .and.callFake((foo: FooType) => { fooData = foo; });
+    const cmp = (a: FooType, b: FooType) => a.data === b.data;
 
     const foo$ = ngRedux
       .select(state => ({ data: `${state.foo}-${state.baz}` }), cmp)
@@ -171,10 +174,9 @@ describe('NgRedux Observable Store', () => {
   it(`should only call provided select function if state changed`, () => {
     const selectSpy = jasmine
       .createSpy('selectSpy')
-      .and.callFake(state => state.foo);
+      .and.callFake((state: IAppState) => state.foo);
 
-    const results = [];
-    ngRedux.select(selectSpy).subscribe(result => results.push(result));
+    ngRedux.select().subscribe(selectSpy);
 
     // called once to get the initial value
     expect(selectSpy.calls.count()).toEqual(1);
@@ -191,21 +193,6 @@ describe('NgRedux Observable Store', () => {
     // Configured once in beforeEach, now we try to provide a store when
     // we already have configured one.
     expect(ngRedux.provideStore.bind(store)).toThrowError();
-  });
-
-  it('should set the store when a store is provided', () => {
-    delete ngRedux._store;
-    delete ngRedux._$store;
-
-    expect(ngRedux._store).toBe(undefined);
-    expect(ngRedux._$store).toBe(undefined);
-
-    expect(ngRedux.provideStore.bind(ngRedux, store)).not.toThrow(Error);
-
-    expect(ngRedux._store.hasOwnProperty('dispatch')).toBe(true);
-    expect(ngRedux._store.hasOwnProperty('subscribe')).toBe(true);
-    expect(ngRedux._store.hasOwnProperty('getState')).toBe(true);
-    expect(ngRedux._store.hasOwnProperty('replaceReducer')).toBe(true);
   });
 
   it('should wait until store is configured before emitting values', () => {
@@ -231,9 +218,9 @@ describe('NgRedux Observable Store', () => {
 
   it('should have select decorators work before store is configured', done => {
     class SomeService {
-      @select() foo$: any;
-      @select() bar$: any;
-      @select() baz$: any;
+      @select() foo$: Observable<string>;
+      @select() bar$: Observable<string>;
+      @select() baz$: Observable<number>;
     }
 
     ngRedux = new NgRedux<IAppState>(mockNgZone);
@@ -260,12 +247,15 @@ describe('Chained actions in subscriptions', () => {
   };
 
   let defaultState: IAppState;
-  let rootReducer;
-  let ngRedux;
+  let rootReducer: Reducer<IAppState>;
+  let ngRedux: NgRedux<IAppState>;
   const mockNgZone = new MockNgZone() as NgZone;
 
-  const doSearch = word => ngRedux.dispatch({ type: 'SEARCH', payload: word });
-  const doFetch = word => ngRedux.dispatch({ type: 'SEARCH_RESULT', payload: word.length });
+  const doSearch = (word: string) =>
+    ngRedux.dispatch({ type: 'SEARCH', payload: word });
+
+  const doFetch = (word: string) =>
+    ngRedux.dispatch({ type: 'SEARCH_RESULT', payload: word.length });
 
   beforeEach(() => {
     defaultState = {
@@ -273,7 +263,7 @@ describe('Chained actions in subscriptions', () => {
       keywordLength: -1
     };
 
-    rootReducer = (state = defaultState, action) => {
+    rootReducer = (state = defaultState, action: PayloadAction) => {
       switch (action.type) {
         case 'SEARCH':
           return Object.assign({}, state, { keyword: action.payload });
@@ -296,7 +286,7 @@ describe('Chained actions in subscriptions', () => {
       const length$ = ngRedux.select(n => n.keywordLength);
       const lengthSpy = jasmine
         .createSpy('lengthSpy')
-        .and.callFake(n => length = n);
+        .and.callFake((n: number) => length = n);
       let lenSub;
       let keywordSub;
 
@@ -329,7 +319,7 @@ describe('Chained actions in subscriptions', () => {
       const length$ = ngRedux.select(n => n.keywordLength);
       const lengthSpy = jasmine
         .createSpy('lengthSpy')
-        .and.callFake(n => length = n);
+        .and.callFake((n: number) => length = n);
       let lenSub;
       let keywordSub;
 
@@ -363,7 +353,7 @@ describe('Chained actions in subscriptions', () => {
       const length$ = ngRedux.select(n => n.keywordLength);
       const lengthSpy = jasmine
         .createSpy('lengthSpy')
-        .and.callFake(n => length = n);
+        .and.callFake((n: number) => length = n);
       let lenSub;
       let keywordSub;
 
@@ -395,7 +385,7 @@ describe('Chained actions in subscriptions', () => {
       const length$ = ngRedux.select(n => n.keywordLength);
       const lengthSpy = jasmine
         .createSpy('lengthSpy')
-        .and.callFake(n => length = n);
+        .and.callFake((n: number) => length = n);
       let lenSub;
       let keywordSub;
 

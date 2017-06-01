@@ -1,5 +1,6 @@
 import { getIn } from '../utils/get-in';
 import { Observable } from 'rxjs/Observable';
+import { Pathable } from '../utils/path-types';
 
 export type Comparator = (x: any, y: any) => boolean;
 export type Transformer<RootState, V> = (store$: Observable<RootState>) => Observable<V>
@@ -21,13 +22,13 @@ export const sniffSelectorType = <RootState, S>(selector?: Selector<RootState, S
         'property';
 
 /** @hidden */
-export const resolver = <RootState, S>(selector: Selector<RootState, S>) => ({
-  property: state => state[selector as PropertySelector],
-  path: state => getIn(state, selector as PathSelector),
+export const resolver = <RootState extends Pathable, S>(selector?: Selector<RootState, S>) => ({
+  property: (state: RootState): S => state[selector as PropertySelector],
+  path: (state: RootState): S => getIn(state, selector as PathSelector),
   function: selector as FunctionSelector<RootState, S>,
-  nil: state => state,
+  nil: (state: RootState): RootState => state,
 });
 
 /** @hidden */
-export const resolveToFunctionSelector = <RootState, S>(selector: Selector<RootState, S>) =>
+export const resolveToFunctionSelector = <RootState, S>(selector?: Selector<RootState, S>) =>
   resolver(selector)[sniffSelectorType(selector)];

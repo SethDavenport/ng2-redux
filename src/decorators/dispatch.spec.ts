@@ -1,17 +1,24 @@
 import 'reflect-metadata';
 import { NgZone } from '@angular/core';
+import { Action } from 'redux';
 import { NgRedux } from '../components/ng-redux';
 import { dispatch } from './dispatch';
 
+interface IAppState {
+  value: string;
+  instanceProperty: string;
+}
+
+type PayloadAction = Action & { payload: IAppState };
 
 class MockNgZone {
-  run = fn => fn()
+  run = (fn: Function) => fn()
 }
 
 describe('@dispatch', () => {
-  let ngRedux;
+  let ngRedux: NgRedux<IAppState>;
   const mockNgZone = new MockNgZone() as NgZone;
-  let defaultState;
+  let defaultState: IAppState;
   let rootReducer;
 
   beforeEach(() => {
@@ -19,7 +26,7 @@ describe('@dispatch', () => {
       value: 'init-value',
       instanceProperty: 'init-instanceProperty'
     };
-    rootReducer = (state = defaultState, action) => {
+    rootReducer = (state = defaultState, action: PayloadAction) => {
       switch (action.type) {
         case 'TEST':
           const { value, instanceProperty } = action.payload;
@@ -29,12 +36,11 @@ describe('@dispatch', () => {
       }
 
     };
-    ngRedux = new NgRedux(mockNgZone);
+    ngRedux = new NgRedux<IAppState>(mockNgZone);
     ngRedux.configureStore(rootReducer, defaultState);
   });
 
   it('should call dispatch with the result of the function', () => {
-
     spyOn(NgRedux.instance, 'dispatch');
     const instance = new TestClass();
     const result = instance.classMethod('class method');
@@ -48,7 +54,9 @@ describe('@dispatch', () => {
     expect(result.type).toBe('TEST');
     expect(result.payload.value).toBe('class method');
     expect(result.payload.instanceProperty).toBe('test');
-    expect(NgRedux.instance.dispatch).toHaveBeenCalledWith(expectedArgs)
+    expect(NgRedux.instance).toBeTruthy();
+    expect(NgRedux.instance && NgRedux.instance.dispatch)
+      .toHaveBeenCalledWith(expectedArgs)
   });
 
   it('should work with property initalizers', () => {
@@ -66,12 +74,25 @@ describe('@dispatch', () => {
     expect(result.type).toBe('TEST');
     expect(result.payload.value).toBe('bound property');
     expect(result.payload.instanceProperty).toBe('test');
-    expect(NgRedux.instance.dispatch).toHaveBeenCalledWith(expectedArgs)
+    expect(NgRedux.instance).toBeTruthy();
+    expect(NgRedux.instance && NgRedux.instance.dispatch)
+      .toHaveBeenCalledWith(expectedArgs)
   })
 
   it('work with properties bound to function defined outside of the class', () => {
     spyOn(NgRedux.instance, 'dispatch');
+    const instanceProperty = 'test';
+    function externalFunction(value: string) {
+      return {
+        type: 'TEST',
+        payload: {
+          value,
+          instanceProperty,
+        }
+      }
+    }
     const instance = new TestClass();
+    instance.externalFunction = externalFunction;
     const result = instance.externalFunction('external function');
     const expectedArgs = {
       type: 'TEST',
@@ -83,26 +104,17 @@ describe('@dispatch', () => {
     expect(result.type).toBe('TEST');
     expect(result.payload.value).toBe('external function');
     expect(result.payload.instanceProperty).toBe('test');
-    expect(NgRedux.instance.dispatch).toHaveBeenCalledWith(expectedArgs);
+    expect(NgRedux.instance).toBeTruthy();
+    expect(NgRedux.instance && NgRedux.instance.dispatch)
+      .toHaveBeenCalledWith(expectedArgs)
   })
 
-
-
-  function externalFunction(value) {
-    return {
-      type: 'TEST',
-      payload: {
-        value,
-        instanceProperty: this.instanceProperty
-      }
-    }
-  }
   class TestClass {
     instanceProperty = 'test'
     @dispatch()
-    externalFunction = externalFunction
+    externalFunction: (any: any) => PayloadAction;
     @dispatch()
-    classMethod(value) {
+    classMethod(value: string) {
       return {
         type: 'TEST',
         payload: {
@@ -113,7 +125,7 @@ describe('@dispatch', () => {
     }
 
     @dispatch()
-    boundProperty = (value) => {
+    boundProperty = (value: string) => {
       return {
         type: 'TEST',
         payload: {

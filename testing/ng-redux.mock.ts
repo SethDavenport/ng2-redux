@@ -19,7 +19,11 @@ import { MockObservableStore } from './observable-store.mock';
  * behaviour in unit tests.
  */
 export class MockNgRedux<RootState> extends MockObservableStore<RootState> {
-  static mockInstance: MockNgRedux<any> = null;
+  /**
+   * @deprecated - use MockNgRedux.getInstance() instead.
+   * This will be made private in a future release.
+   */
+  static mockInstance?: MockNgRedux<any> = undefined;
 
   /**
    * Returns a subject that's connected to any observable returned by the
@@ -31,7 +35,7 @@ export class MockNgRedux<RootState> extends MockObservableStore<RootState> {
   static getSelectorStub<R, S>(
     selector?: Selector<R, S>,
     comparator?: Comparator): Subject<S> {
-      return MockNgRedux.mockInstance.getSelectorStub<S>(selector, comparator);
+      return MockNgRedux.getInstance().getSelectorStub<S>(selector, comparator);
     }
 
   /**
@@ -45,15 +49,15 @@ export class MockNgRedux<RootState> extends MockObservableStore<RootState> {
    */
   static getSubStore<S>(...pathSelectors: PathSelector[]): MockObservableStore<S> {
     return pathSelectors.length ?
-      MockNgRedux.mockInstance.getSubStore(...pathSelectors) :
-      MockNgRedux.mockInstance;
+      MockNgRedux.getInstance().getSubStore(...pathSelectors) :
+      MockNgRedux.getInstance();
   }
 
   /**
    * Reset all previously configured stubs.
    */
   static reset(): void {
-    MockNgRedux.mockInstance.reset();
+    MockNgRedux.getInstance().reset();
     selectionMap.reset();
     NgRedux.instance = MockNgRedux.mockInstance;
   }
@@ -63,6 +67,17 @@ export class MockNgRedux<RootState> extends MockObservableStore<RootState> {
     super();
 
     NgRedux.instance = this; // This hooks the mock up to @select.
-    MockNgRedux.mockInstance = this;
+  }
+
+  /**
+   * Gives access to a singleton instance of the mock for use in unit
+   * tests. Handy if you want to spy on things like 'dispatch' or
+   * 'select'.
+   */
+  static getInstance() {
+    if (!MockNgRedux.mockInstance) {
+      MockNgRedux.mockInstance = new MockNgRedux();
+    }
+    return MockNgRedux.mockInstance;
   }
 }

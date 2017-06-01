@@ -12,6 +12,7 @@ import {
 } from 'redux';
 
 import { NgZone } from '@angular/core';
+import { Observer } from 'rxjs/Observer';
 import { Observable } from 'rxjs/Observable';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import 'rxjs/add/operator/map';
@@ -26,15 +27,15 @@ import { ObservableStore } from './observable-store';
 
 export class NgRedux<RootState> implements ObservableStore<RootState> {
   /** @hidden */
-  static instance: ObservableStore<any> = undefined;
+  static instance?: ObservableStore<any> = undefined;
 
-  private _store: Store<RootState> = null;
-  private _store$: BehaviorSubject<RootState> = null;
+  private _store: Store<RootState>;
+  private _store$: BehaviorSubject<RootState>;
 
   /** @hidden */
   constructor(private ngZone: NgZone) {
     NgRedux.instance = this;
-    this._store$ = new BehaviorSubject<RootState>(undefined)
+    this._store$ = new BehaviorSubject<RootState | undefined>(undefined)
       .filter(n => n !== undefined)
       .switchMap(n => this.storeToObservable(n as any)) as BehaviorSubject<RootState>;
   }
@@ -91,7 +92,7 @@ export class NgRedux<RootState> implements ObservableStore<RootState> {
   replaceReducer = (nextReducer: Reducer<RootState>) =>
     this._store.replaceReducer(nextReducer)
 
-  dispatch: Dispatch<RootState> = action => {
+  dispatch: Dispatch<RootState> = (action: Action) => {
     assert(
       !!this._store,
       'Dispatch failed: did you forget to configure your store? ' +
@@ -108,7 +109,7 @@ export class NgRedux<RootState> implements ObservableStore<RootState> {
     comparator?: Comparator): Observable<S> =>
       this._store$
         .distinctUntilChanged()
-        .map(resolveToFunctionSelector(selector))
+        .map<RootState, any>(resolveToFunctionSelector(selector))
         .distinctUntilChanged(comparator);
 
   configureSubStore = <SubState>(
@@ -122,7 +123,7 @@ export class NgRedux<RootState> implements ObservableStore<RootState> {
   }
 
   private storeToObservable = (store: Store<RootState>): Observable<RootState> =>
-    new Observable<RootState>(observer => {
+    new Observable<RootState>((observer: Observer<RootState>) => {
       observer.next(store.getState());
       store.subscribe(() => observer.next(store.getState()));
     });

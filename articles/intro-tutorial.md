@@ -535,7 +535,7 @@ hook into this as well:
 
 ```typescript
 it('dispatches INCREMENT when ...', () => {
-  const spy = spyOn(MockNgRedux.mockInstance, 'dispatch');
+  const spy = spyOn(MockNgRedux.getInstance(), 'dispatch');
 
   // Run your test code ...
 

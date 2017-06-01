@@ -45,10 +45,10 @@ export class SubStore<State> implements ObservableStore<State> {
     comparator?: Comparator): Observable<SelectedState> =>
       this.rootStore
         .select(this.basePath)
-        .map(resolveToFunctionSelector(selector))
+        .map<State, any>(resolveToFunctionSelector(selector))
         .distinctUntilChanged(comparator)
 
-  subscribe = (listener): () => void => {
+  subscribe = (listener: (any: any) => void): () => void => {
     const subscription = this.select().subscribe(listener);
     return () => subscription.unsubscribe();
   }
