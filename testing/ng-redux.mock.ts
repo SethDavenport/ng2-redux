@@ -19,6 +19,10 @@ import { MockObservableStore } from './observable-store.mock';
  * behaviour in unit tests.
  */
 export class MockNgRedux<RootState> extends MockObservableStore<RootState> {
+  /**
+   * @deprecated Use getInstance() instead. This field will be made
+   * private in a future release.
+   */
   static mockInstance?: MockNgRedux<any> = undefined;
 
   /**
@@ -55,20 +59,24 @@ export class MockNgRedux<RootState> extends MockObservableStore<RootState> {
   static reset(): void {
     MockNgRedux.getInstance().reset();
     selectionMap.reset();
-    NgRedux.instance = MockNgRedux.mockInstance;
+    NgRedux.instance = MockNgRedux.getInstance();
   }
 
-  /** @hidden */
-  constructor() {
-    super();
-
-    NgRedux.instance = this; // This hooks the mock up to @select.
-  }
-
-  private static getInstance() {
+  /**
+   * Gets access to the singleton mock instance; useful for cases
+   * where you need to spy on store functions.
+   */
+  static getInstance() {
     if (!MockNgRedux.mockInstance) {
       MockNgRedux.mockInstance = new MockNgRedux();
     }
     return MockNgRedux.mockInstance;
+  }
+
+  /** @hidden */
+  private constructor() {
+    super();
+
+    NgRedux.instance = this; // This hooks the mock up to @select.
   }
 }

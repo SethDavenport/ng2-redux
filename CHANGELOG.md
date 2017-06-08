@@ -1,3 +1,12 @@
+# 6.4.5
+
+* Fix for #419 (MockNgRedux not implementing all the members of NgRedux's interface)
+* Fix for a boundary case where MockNgRedux.mockInstance would sometimes be
+instantiated twice
+* Access to the MockNgRedux singleton is now via `MockNgRedux.getInstance()` method
+instead of the `MockNgRedux.mockInstance` static member. The static member still exists,
+but is deprecated and will be removed in a future release.
+
 # 6.4.4
 
 * Improve packaging of `testing` submodule for people working in strict mode (thanks @ialibhay)!
